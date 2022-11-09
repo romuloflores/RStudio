@@ -1,0 +1,371 @@
+install.packages("rtweet") # For Twitter mining
+install.packages("tidytext") # For mining
+install.packages("dplyr") # For
+install.packages("tm")  # For Text mining
+install.packages("twitteR") # For Twitter mining
+install.packages("wordcloud2") # For Word Cloud Chart
+install.packages("ggplot2")# For Gplot Charts
+
+
+library(NLP)
+library(tm)
+library(rtweet)
+library(twitteR)
+library(wordcloud2)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+#Extract Twitter #Hashtags and add new column with the specific content name
+
+# Change the next four lines based on your own consumer_key, consume_secret, access_token, and access_secret.
+consumer_key <- "      " # Add your key
+consumer_secret <- "     " # Add your key
+access_token <- "         " # Add your key
+access_secret <- "              " # Add your key
+
+#Twitter Search #ClimaChange
+setup_twitter_oauth(consumer_key, consumer_secret, access_token, access_secret)
+
+data = searchTwitter("#ClimateChange", n = 1500,since = '2019-08-01', retryOnRateLimit = 30)
+
+climate.fl<-twListToDF(data)
+View(climate.fl)
+
+saveRDS(data,file='climate.rds')
+
+komen<-climate.fl
+
+write.csv(komen,file='@climate.csv')
+
+
+#Twitter Search #GretaThunberg
+data = searchTwitter("#GretaThunberg", n = 1500,since = '2019-08-01', retryOnRateLimit = 30)
+
+greta.fl<-twListToDF(data)
+View(greta.fl)
+
+saveRDS(data,file='greta.rds')
+
+komen<-greta.fl
+
+write.csv(komen,file='@greta.csv')
+
+#Twitter Search #RainForest
+data = searchTwitter("#rainforest", n = 1500,since = '2019-08-01', retryOnRateLimit = 30)
+
+rainforest.fl<-twListToDF(data)
+View(rainforest.fl)
+
+saveRDS(data,file='rainforest.rds')
+
+komen<-rainforest.fl
+
+write.csv(komen,file='@rainforest.csv')
+
+#Add new Column to CSV file @rainforest
+rainforest <- read.csv(file="@rainforest.csv", head=TRUE, sep=",")
+
+hashtag <- c(rep('#RainForest',1500))
+ya = data.frame(hashtag)
+ya
+dfa = cbind(rainforest,ya)
+write.csv(dfa,file='/Users/Romulo/Documents/R/@rainforest.csv')
+
+#Add new Column to CVS file @climatechange
+climate <- read.csv(file="@climate.csv", head=TRUE, sep=",")
+
+hashtag <- c(rep('#ClimateChange',1500))
+yb = data.frame(hashtag)
+yb
+dfb = cbind(climate,yb)
+write.csv(dfb,file='/Users/Romulo/Documents/R/@climate.csv')
+
+#Add new Column to CSV file @greta
+greta <- read.csv(file="@greta.csv", head=TRUE, sep=",")
+
+hashtag <- c(rep('#Greta',1500))
+yc = data.frame(hashtag)
+yc
+dfc = cbind(greta,yc)
+write.csv(dfc,file='/Users/Romulo/Documents/R/@Greta.csv')
+
+###############################################################################################
+
+#Load DataSets using variable associated
+setwd("~/R")
+forest <- read.csv(file="@rainforest.csv", head=TRUE, sep=",")
+greta <- read.csv(file="@greta.csv", head=TRUE, sep=",")
+climate <- read.csv(file="@climate.csv", head=TRUE, sep=",")
+
+#Append all Data Sets variables in one file
+setwd("~/R")
+twitterAnalysis <- rbind(forest,greta,climate)
+write.csv(twitterAnalysis,file='/Users/Romulo/Documents/R/analysis_Twitter.csv')
+tweetAnalysis <- read.csv(file="analysis_Twitter.csv", head=TRUE, sep=",")
+write.csv(tweetAnalysis,file='/Users/Romulo/Documents/R/Project_Analysis_Twitter.csv')
+
+#Format Date Time to Date
+
+tweetAnalysis$created <- as.factor(tweetAnalysis$created) # Convert to Factor
+tweetAnalysis$created <- as.Date(tweetAnalysis$created, format="%d/%m/%Y") # Convert to Date
+
+class(tweetAnalysis$created)
+
+write.csv(tweetAnalysis,file='/Users/Romulo/Documents/R/analysis_Twitter.csv')
+
+
+write.csv(tweetAnalysis,file='/Users/Romulo/Documents/R/Project_Analysis_Twitter.csv')
+
+
+#String Slipt
+install.packages("xml2")
+install.packages("rvest")
+library(xml2)
+library(rvest)
+
+#Data Cleaning Field StatusSource removing URL
+
+tweetAnalysis$statusSource <- gsub('</a>',"",tweetAnalysis$statusSource)
+
+tweetAnalysis$statusSource <- gsub('.*>',"",tweetAnalysis$statusSource)
+
+tweetAnalysis$statusSource <- gsub('\\s+',"",tweetAnalysis$statusSource)
+
+tweetAnalysis$statusSource <- strsplit(as.character(tweetAnalysis$statusSource), ">")
+
+tweetAnalysis$statusSource <- as.character(tweetAnalysis$statusSource) # Convert to Character
+
+
+#Save after removing url
+write.csv(tweetAnalysis,file='/Users/Romulo/Documents/R/analysis_Twitter.csv')
+
+write.csv(tweetAnalysis,file='/Users/Romulo/Documents/R/Project_Analysis_Twitter.csv')
+
+###########################################################################################
+#World of Cloud
+
+install.packages("SnowballC") # for text stemming
+install.packages("wordcloud") # word-cloud generator
+install.packages("RColorBrewer") # color palettes
+
+# Load
+
+library("SnowballC")
+library("RColorBrewer")
+library("wordcloud")
+
+#Data Cleaning Field Text
+
+wordcloudChart <- Corpus(VectorSource(tweetAnalysis$text))
+
+inspect(wordcloudChart)
+
+toSpace <- content_transformer(function (x , pattern ) gsub(pattern, " ", x))
+wordcloudChart <- tm_map(wordcloudChart, toSpace, "/")
+wordcloudChart <- tm_map(wordcloudChart, toSpace, "@")
+wordcloudChart <- tm_map(wordcloudChart, toSpace, "\\|")
+wordcloudChart <- tm_map(wordcloudChart, toSpace, "https")
+wordcloudChart <- tm_map(wordcloudChart, toSpace, "tco")
+wordcloudChart <- tm_map(wordcloudChart, toSpace, "connection\u0092s")
+wordcloudChart <- tm_map(wordcloudChart, toSpace, "connection<U+0092>s")
+wordcloudChart <- tm_map(wordcloudChart, toSpace, "amp")
+wordcloudChart <- tm_map(wordcloudChart, toSpace, "connection�s")
+wordcloudChart <- tm_map(wordcloudChart, toSpace, "usin�")
+
+
+# Convert the text to lower case
+wordcloudChart <- tm_map(wordcloudChart, content_transformer(tolower))
+# Remove numbers
+wordcloudChart <- tm_map(wordcloudChart, removeNumbers)
+# Remove english common stopwords
+wordcloudChart <- tm_map(wordcloudChart, removeWords, stopwords("english"))
+# Remove https common stopwords
+wordcloudChart <- tm_map(wordcloudChart, removeWords, stopwords("https"))
+# Remove your own stop word
+# specify your stopwords as a character vector
+wordcloudChart <- tm_map(wordcloudChart, removeWords, c("blabla1", "blabla2"))
+# Remove punctuations
+wordcloudChart <- tm_map(wordcloudChart, removePunctuation)
+# Eliminate extra white spaces
+wordcloudChart <- tm_map(wordcloudChart, stripWhitespace)
+
+#Create Word Cloud Chart and Variables
+dtm <- TermDocumentMatrix(wordcloudChart)
+m <- as.matrix(dtm)
+v <- sort(rowSums(m),decreasing=TRUE)
+d <- data.frame(word = names(v),freq=v)
+head(d, 28)
+
+#Create Data Word Cloud Chart
+
+wordcloud(words = d$word, freq = d$freq, min.freq = 218,
+          max.words=3000, random.order=FALSE, rot.per=0.35,
+          colors=brewer.pal(8, "Dark2"))
+
+#Create Data Plot the top 20 words
+
+term_frequency <- rowSums(as.matrix(dtm))
+term_frequency <- subset(term_frequency, term_frequency > 200)
+df <- data.frame(words = names(term_frequency), freq = term_frequency)
+
+ggplot(df, aes(reorder(words, freq), freq)) + geom_bar(stat = "identity", fill = "blue") +
+  coord_flip() + labs(x = "Words", y = "Frequency", title = "Most frequently used words")
+
+
+##########################################################################################
+
+#Create a data frame for Source Analysis
+
+
+statusSource <- Corpus(VectorSource(tweetAnalysis$statusSource))
+
+inspect(statusSource)
+
+
+#Create Word Cloud Chart and Variables
+dtmS <- TermDocumentMatrix(statusSource)
+mS <- as.matrix(dtmS)
+vS <- sort(rowSums(mS),decreasing=TRUE)
+dS <- data.frame(word = names(vS),freq=vS)
+head(dS, 28)
+
+
+
+#Create Data Word Cloud Chart
+
+wordcloud(words = dS$word, freq = dS$freq, min.freq = 1,
+          max.words=3000, random.order=FALSE, rot.per=0.35,
+          colors=brewer.pal(8, "Dark2"))
+
+#Create Data Plot the top 20 words
+
+term_frequencyS <- rowSums(as.matrix(dtmS))
+term_frequencyS <- subset(term_frequencyS, term_frequencyS > 32)
+dfS <- data.frame(words = names(term_frequencyS), freq = term_frequencyS)
+
+ggplot(dfS, aes(reorder(words, freq), freq)) + geom_bar(stat = "identity", fill = "blue") +
+  coord_flip() + labs(x = "Words", y = "Frequency", title = "Most frequently Source Used ")
+
+# Adding columns
+datasource$fraction = datasource$count / sum(datasource$count)
+datasource$percentage = datasource$count / sum(datasource$count) * 100
+datasource$ymax = cumsum(datasource$fraction)
+datasource$ymin = c(0, head(datasource$ymax, n=-1))
+# Rounding the data to two decimal points
+datasource <- round_df(datasource, 2)
+# Specify what the legend should say
+Type_of_Tweet <- paste(datasource$category, datasource$percentage, "%")
+ggplot(data, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=Tweet_Source_Type)) +
+  geom_rect() +
+  coord_polar(theta="y") +
+  xlim(c(2, 4)) +
+  theme_void() +
+  theme(legend.position = "right")
+
+#############################################################################################
+#Anova Test
+
+Anova <- aov(tweetAnalysis$retweetCount ~ tweetAnalysis$hashtag)
+summary(Anova)
+
+# Scatter plot (add colour)
+plot(tweetAnalysis$retweetCount, pch=21,      
+     bg=c("red","green","blue")[tweetAnalysis$hashtag],
+     main="Twitter Retweet Data",
+     xlab="Number of Retweets", ylab="Number Records")
+
+# Add legend Scatter plot
+legend(1, 1000, unique(tweetAnalysis$hashtag), pch=21,col=c("red","Green","blue"), cex=0.5)
+legend(1, 1000, legend=tweetAnalysis$hashtag,
+       col=c("red", "blue"), lty=1:2, cex=0.8)
+
+# Statistic Description
+# Get some data #RainForest
+install.packages('moments')
+library(moments) # required for skewness
+
+tweetAnalysis <- read.csv(file="analysis_Twitter.csv", head=TRUE, sep=",")
+allretweet<- tweetAnalysis$retweetCount
+head(allretweet)
+
+# Return descriptive statistics for input vector
+favStats <- function(stats) {
+  newMatrix <- matrix (1:6, nrow = 1)
+  colnames(newMatrix) <- c("Mean", "Median", "Variance", "Minimum", "Maximum", "Skewness")
+  rownames(newMatrix) <- "My Statistics"
+  newMatrix[1,] <- c(mean(stats),median(stats),var(stats),min(stats),max(stats),skewness(stats))
+  return(newMatrix)
+}
+
+favStats(allretweet) #Statistics all Retweets
+
+forest <- read.csv(file="@rainforest.csv", head=TRUE, sep=",")
+Forest12 <- forest$retweetCount
+head(Forest12)
+
+# Return descriptive statistics for input vector
+favStats <- function(stats) {
+  newMatrix <- matrix (1:6, nrow = 1)
+  colnames(newMatrix) <- c("Mean", "Median", "Variance", "Minimum", "Maximum", "Skewness")
+  rownames(newMatrix) <- "Statistics"
+  newMatrix[1,] <- c(mean(stats),median(stats),var(stats),min(stats),max(stats),skewness(stats))
+  return(newMatrix)
+}
+
+favStats(Forest12) #Statistics #RainForest
+
+highRetweet <- which.max(tweetAnalysis$retweetCount)
+highRetweet
+# Get some data #GretaThunberg
+
+install.packages('moments')
+library(moments) # required for skewness
+
+greta <- read.csv(file="@Greta.csv", head=TRUE, sep=",")
+Greta12 <- greta$retweetCount
+head(Greta12)
+
+# Return descriptive statistics for input vector
+favStats <- function(stats) {
+  newMatrix <- matrix (1:6, nrow = 1)
+  colnames(newMatrix) <- c("Mean", "Median", "Variance", "Minimum", "Maximum", "Skewness")
+  rownames(newMatrix) <- "Statistics"
+  newMatrix[1,] <- c(mean(stats),median(stats),var(stats),min(stats),max(stats),skewness(stats))
+  return(newMatrix)
+}
+
+favStats(Greta12) #Statistics #GretaThunberg
+
+# Get some data #ClimateChange
+
+install.packages('moments')
+library(moments) # required for skewness
+
+climate <- read.csv(file="@Climate.csv", head=TRUE, sep=",")
+Climate12 <- climate$retweetCount
+head(Climate12)
+
+# Return descriptive statistics for input vector
+favStats <- function(stats) {
+  newMatrix <- matrix (1:6, nrow = 1)
+  colnames(newMatrix) <- c("Mean", "Median", "Variance", "Minimum", "Maximum", "Skewness")
+  rownames(newMatrix) <- "Statistics"
+  newMatrix[1,] <- c(mean(stats),median(stats),var(stats),min(stats),max(stats),skewness(stats))
+  return(newMatrix)
+}
+
+favStats(Climate12) #Statistics #ClimateChange
+
+###############################################################################################  
+
+#Time Series Plot Analysis between  date and RetweetCount
+
+yt.views = data.frame(
+  Date = as.Date(names(tapply(tweetAnalysis$retweetCount,tweetAnalysis$created,sum))),
+  Views = as.numeric(tapply(tweetAnalysis$retweetCount,tweetAnalysis$created,sum))
+)
+
+ggplot(yt.views, aes(Date, Views)) + geom_line() +
+  xlab("Days") + ylab("Number of Retweet") + ggtitle(label = "Daily Retweet Growth")
+
